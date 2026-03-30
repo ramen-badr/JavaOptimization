@@ -11,6 +11,7 @@ class ManualValueSorterTest {
     @Test
     void shouldSortValuesAscending() {
         List<ValueObject> values = new ArrayList<>();
+
         values.add(new ValueObject(5));
         values.add(new ValueObject(1));
         values.add(new ValueObject(3));

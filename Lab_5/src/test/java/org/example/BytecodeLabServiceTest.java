@@ -22,7 +22,6 @@ class BytecodeLabServiceTest {
     void shouldChangeJavaFieldValue() {
         ValueObject valueObject = new ValueObject(10);
         service.changeJavaField(valueObject, 99);
-
         assertEquals(99, valueObject.value);
     }
 }
