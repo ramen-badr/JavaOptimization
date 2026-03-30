@@ -1,5 +1,8 @@
 package org.example;
 
+/**
+ * Поле оставлено публичным намеренно для демонстрации bytecode-инструкции putfield в лабораторной работе.
+ */
 public class ValueObject implements HasValue {
     public int value;
 

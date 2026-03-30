@@ -9,6 +9,9 @@ public class BytecodeLabService {
         return target.getValue();
     }
 
+    /**
+     * Метод введен специально для лабораторной демонстрации записи в java-поле (putfield).
+     */
     public void changeJavaField(ValueObject target, int newValue) {
         target.value = newValue;
     }
