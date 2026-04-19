@@ -1,0 +1,66 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.6.1'
+    }
+}
+
+plugins {
+    id 'java'
+}
+
+import proguard.gradle.ProGuardTask
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+def configureProguardTask = { ProGuardTask task, String scenario ->
+    task.dependsOn tasks.jar
+    task.injars(tasks.jar.archiveFile.get().asFile)
+    task.outjars(layout.buildDirectory.file("proguard/${scenario}/output.jar").get().asFile)
+    task.libraryjars("${System.getProperty('java.home')}/jmods/java.base.jmod", jarfilter: '!**.jar', filter: '!module-info.class')
+    task.configuration("proguard/${scenario}.pro")
+    task.printmapping(layout.buildDirectory.file("proguard/${scenario}/mapping.txt").get().asFile)
+    task.printusage(layout.buildDirectory.file("proguard/${scenario}/usage.txt").get().asFile)
+    task.printseeds(layout.buildDirectory.file("proguard/${scenario}/seeds.txt").get().asFile)
+}
+
+tasks.register('proguardNoOp', ProGuardTask) { task ->
+    configureProguardTask(task, 'no-op')
+}
+
+tasks.register('proguardFull', ProGuardTask) { task ->
+    configureProguardTask(task, 'full')
+}
+
+tasks.register('proguardKeepClasses', ProGuardTask) { task ->
+    configureProguardTask(task, 'keep-classes')
+}
+
+tasks.register('proguardKeepMethodName', ProGuardTask) { task ->
+    configureProguardTask(task, 'keep-method-name')
+}
+
+tasks.register('proguardKeepMethodSignature', ProGuardTask) { task ->
+    configureProguardTask(task, 'keep-method-signature')
+}
+
+tasks.register('proguardAll') {
+    dependsOn 'proguardNoOp', 'proguardFull', 'proguardKeepClasses', 'proguardKeepMethodName', 'proguardKeepMethodSignature'
+}
