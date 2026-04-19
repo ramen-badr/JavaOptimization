@@ -25,7 +25,7 @@
    - `proguardKeepMethodName` — не трогать методы по имени
    - `proguardKeepMethodSignature` — не трогать методы по сигнатуре
 
-Конфиги лежат в `/home/runner/work/JavaOptimization/JavaOptimization/Lab_6/proguard`.
+Конфиги лежат в `proguard`.
 
 Ссылка на ProGuard: https://www.guardsquare.com/proguard
 
@@ -34,7 +34,7 @@
 ## Как собрать, протестировать и прогнать ProGuard
 
 ```bash
-cd /home/runner/work/JavaOptimization/JavaOptimization/Lab_6
+cd Lab_6
 ./gradlew clean test proguardAll
 ```
 
@@ -50,7 +50,7 @@ cd /home/runner/work/JavaOptimization/JavaOptimization/Lab_6
 Проверка классов в JAR:
 
 ```bash
-cd /home/runner/work/JavaOptimization/JavaOptimization/Lab_6
+cd Lab_6
 for s in no-op full keep-classes keep-method-name keep-method-signature; do
   echo "=== $s ==="
   jar tf build/proguard/$s/output.jar | sort
@@ -84,7 +84,7 @@ for s in no-op full keep-classes keep-method-name keep-method-signature; do
 ### Команды
 
 ```bash
-cd /home/runner/work/JavaOptimization/JavaOptimization/Lab_6
+cd Lab_6
 
 # До/после для конкретных сценариев
 javap -classpath build/proguard/no-op/output.jar org.example.Main
