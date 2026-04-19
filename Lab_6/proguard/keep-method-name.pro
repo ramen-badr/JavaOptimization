@@ -6,8 +6,8 @@
 }
 
 -keep,allowobfuscation class org.example.EmptyClass* {
-    *;
+    *** keepByName(...);
 }
 -keepclassmembernames class org.example.EmptyClass* {
-    void keepByName();
+    *** keepByName(...);
 }

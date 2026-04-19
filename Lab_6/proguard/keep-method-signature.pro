@@ -6,8 +6,8 @@
 }
 
 -keep,allowobfuscation class org.example.EmptyClass* {
-    *;
+    void *(java.lang.String,int);
 }
 -keepclassmembernames class org.example.EmptyClass* {
-    void keepBySignature(java.lang.String,int);
+    void *(java.lang.String,int);
 }

@@ -13,6 +13,6 @@ public class EmptyClassFive {
     public void keepByName() {
     }
 
-    public void keepBySignature(String text, int number) {
+    public void keepBySignature(String string, int n) {
     }
 }
