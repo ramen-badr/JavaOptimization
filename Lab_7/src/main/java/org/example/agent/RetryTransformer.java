@@ -13,8 +13,6 @@ public class RetryTransformer implements ClassFileTransformer {
     private static final String TARGET_PACKAGE = "org.example.demo";
     private static final int MAX_RETRIES = 3;
     private static final String RETRY_ATTEMPT_VAR = "__agentRetryAttempt";
-    private static final String RETRY_START_VAR = "__agentRetryStart";
-    private static final String RETRY_LOG_SUCCESS_VAR = "__agentRetryLogSuccess";
 
     boolean shouldNotTransform(String className) {
         if (className == null) {
@@ -93,42 +91,31 @@ public class RetryTransformer implements ClassFileTransformer {
 
     private void instrumentMethod(CtClass ctClass, CtMethod method) throws CannotCompileException, NotFoundException {
         method.addLocalVariable(RETRY_ATTEMPT_VAR, CtClass.intType);
-        method.addLocalVariable(RETRY_START_VAR, CtClass.longType);
-        method.addLocalVariable(RETRY_LOG_SUCCESS_VAR, CtClass.booleanType);
 
         String displayName = ctClass.getName() + "." + method.getName();
-        String enterLog = "System.out.println(\"[Agent] Enter " + displayName + " args=\" + java.util.Arrays.toString($args) + \" attempt=\" + " + RETRY_ATTEMPT_VAR + ");";
-        String successLog = "System.out.println(\"[Agent] Exit " + displayName + " time=\" + __duration + \"ns\");";
-        String failureLog = "System.out.println(\"[Agent] Exception in " + displayName + " time=\" + __duration + \"ns: \" + $e);";
-
-        String before = "{ " + RETRY_ATTEMPT_VAR + " = " + RetrySupport.class.getName() + ".nextAttempt(\"" + displayName + "\"); "
-            + RETRY_LOG_SUCCESS_VAR + " = true; "
-            + RETRY_START_VAR + " = System.nanoTime(); "
-            + enterLog + " }";
+        String before = "{ " + RetrySupport.class.getName() + ".onEnter(\"" + displayName + "\", $args); }";
         method.insertBefore(before);
 
-        String after = "{ if (" + RETRY_LOG_SUCCESS_VAR + ") { long __duration = System.nanoTime() - " + RETRY_START_VAR + "; "
-            + successLog + " " + RetrySupport.class.getName() + ".clear(\"" + displayName + "\"); } }";
+        String after = "{ " + RetrySupport.class.getName() + ".onSuccess(\"" + displayName + "\"); }";
         method.insertAfter(after, false);
 
-        String catchBody = buildCatchBody(method, displayName, failureLog);
+        String catchBody = buildCatchBody(method, displayName);
         method.addCatch(catchBody, ctClass.getClassPool().get("java.lang.Throwable"));
     }
 
-    private String buildCatchBody(CtMethod method, String displayName, String failureLog) throws NotFoundException {
+    private String buildCatchBody(CtMethod method, String displayName) throws NotFoundException {
         CtClass returnType = method.getReturnType();
+        String retrySupport = RetrySupport.class.getName();
         StringBuilder body = new StringBuilder();
-        body.append("{ long __duration = System.nanoTime() - ").append(RETRY_START_VAR).append("; ")
-            .append(failureLog).append(" ");
-        body.append("if (").append(RETRY_ATTEMPT_VAR).append(" <= ").append(MAX_RETRIES).append(") { ")
-            .append(RETRY_LOG_SUCCESS_VAR).append(" = false; ");
+        body.append("{ if (").append(retrySupport).append(".onFailure(\"").append(displayName)
+            .append("\", $e, ").append(MAX_RETRIES).append(")) { ");
         if (CtClass.voidType.equals(returnType)) {
             body.append(method.getName()).append("($$); return; ");
         } else {
             body.append("return ($r) ").append(method.getName()).append("($$); ");
         }
         body.append("} ");
-        body.append(RetrySupport.class.getName()).append(".clear(\"").append(displayName).append("\"); ");
+        body.append(retrySupport).append(".clear(\"").append(displayName).append("\"); ");
         body.append("throw $e; }");
         return body.toString();
     }
