@@ -112,7 +112,8 @@ public class RetryTransformer implements ClassFileTransformer {
         if (CtClass.voidType.equals(returnType)) {
             body.append(method.getName()).append("($$); return; ");
         } else {
-            body.append("return ($r) ").append(method.getName()).append("($$); ");
+            body.append("return (").append(returnType.getName()).append(") ")
+                .append(method.getName()).append("($$); ");
         }
         body.append("} ");
         body.append(retrySupport).append(".clear(\"").append(displayName).append("\"); ");
