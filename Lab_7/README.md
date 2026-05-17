@@ -32,12 +32,22 @@ JAR: `build/libs/Lab_7-1.0-SNAPSHOT.jar`
 
 ## Запуск через premain (-javaagent)
 
+1) Собрать JAR (см. раздел выше).
+2) Запустить приложение с агентом:
+
 ```bash
 cd /home/runner/work/JavaOptimization/JavaOptimization/Lab_7
 java -javaagent:build/libs/Lab_7-1.0-SNAPSHOT.jar -jar build/libs/Lab_7-1.0-SNAPSHOT.jar
 ```
 
-В выводе появятся логи `[Agent]` для методов с аннотацией.
+Ожидаемо в выводе будут строки вида:
+
+```text
+[Agent] Enter org.example.demo.DemoService.unstableOperation args=[call-0] attempt=1
+[Agent] Exception in org.example.demo.DemoService.unstableOperation time=...ns: java.lang.IllegalStateException: ...
+[Agent] Enter org.example.demo.DemoService.unstableOperation args=[call-0] attempt=2
+[Agent] Exit org.example.demo.DemoService.unstableOperation time=...ns
+```
 
 ---
 
@@ -60,3 +70,11 @@ java -cp build/libs/Lab_7-1.0-SNAPSHOT.jar org.example.demo.AgentAttacher <PID> 
 ```
 
 После подключения в консоли приложения начнут появляться сообщения `[Agent]`.
+
+Пример:
+
+```text
+Agent loaded.
+[Agent] Enter org.example.demo.DemoService.unstableVoid args=[1] attempt=1
+[Agent] Exception in org.example.demo.DemoService.unstableVoid time=...ns: java.lang.IllegalArgumentException: ...
+```
