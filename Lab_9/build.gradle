@@ -1,0 +1,78 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
+plugins {
+    id 'java'
+    id 'pmd'
+    id 'jacoco'
+    id 'com.github.spotbugs' version '6.2.3'
+}
+
+group = 'org.json'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.jayway.jsonpath:json-path:2.9.0'
+    testImplementation 'org.mockito:mockito-core:4.11.0'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+test {
+    useJUnit()
+    finalizedBy jacocoTestReport
+}
+
+pmd {
+    toolVersion = '6.55.0'
+    ruleSets = []
+    ruleSetFiles = files('config/pmd/ruleset.xml')
+    consoleOutput = false
+    ignoreFailures = true
+}
+
+tasks.withType(Pmd).configureEach {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+spotbugs {
+    toolVersion = '4.8.6'
+    effort = 'max'
+    reportLevel = 'low'
+    ignoreFailures = true
+}
+
+tasks.withType(SpotBugsTask).configureEach {
+    reports {
+        html.required = true
+        xml.required = false
+    }
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it, include: ['org/json/**'])
+    }))
+}
+
+check.dependsOn jacocoTestReport
