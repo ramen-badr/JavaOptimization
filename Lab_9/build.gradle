@@ -1,0 +1,85 @@
+plugins {
+    id 'java'
+    id 'pmd'
+    id 'jacoco'
+    id 'com.github.spotbugs' version '6.0.16'
+}
+
+group = 'com.google.code.gson'
+version = '2.14.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+dependencies {
+    implementation 'com.google.errorprone:error_prone_annotations:2.48.0'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.google.truth:truth:1.4.5'
+    testImplementation 'com.google.guava:guava:33.5.0-jre'
+    testImplementation 'com.google.guava:guava-testlib:33.5.0-jre'
+}
+
+test {
+    useJUnit()
+    filter {
+        excludeTestsMatching 'com.google.gson.integration.*'
+        excludeTestsMatching 'com.google.gson.functional.EnumWithObfuscatedTest'
+    }
+}
+
+pmd {
+    toolVersion = '6.55.0'
+    consoleOutput = true
+    ruleSets = []
+    ruleSetFiles = files('config/pmd/pmd.xml')
+    ignoreFailures = true
+}
+
+tasks.withType(Pmd).configureEach {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+spotbugs {
+    toolVersion = '4.8.6'
+    effort = 'max'
+    reportLevel = 'low'
+    ignoreFailures = true
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
+    classDirectories.setFrom(
+        sourceSets.main.output.classesDirs.asFileTree.matching {
+            include 'com/google/gson/**'
+            exclude '**/module-info.class'
+        }
+    )
+}
+
+check.dependsOn jacocoTestReport, pmdMain, pmdTest, spotbugsMain, spotbugsTest
