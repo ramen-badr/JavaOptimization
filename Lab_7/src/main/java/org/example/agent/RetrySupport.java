@@ -3,7 +3,7 @@ package org.example.agent;
 import java.util.HashMap;
 import java.util.Map;
 
-final class RetrySupport {
+public final class RetrySupport {
     private static final ThreadLocal<Map<String, Integer>> ATTEMPTS =
         ThreadLocal.withInitial(HashMap::new);
     private static final ThreadLocal<Map<String, Long>> STARTS =
@@ -12,7 +12,7 @@ final class RetrySupport {
     private RetrySupport() {
     }
 
-    static void onEnter(String methodId, Object[] args) {
+    public static void onEnter(String methodId, Object[] args) {
         Map<String, Integer> attempts = ATTEMPTS.get();
         int attempt = attempts.getOrDefault(methodId, 0) + 1;
         attempts.put(methodId, attempt);
@@ -20,7 +20,7 @@ final class RetrySupport {
         System.out.println("[Agent] Enter " + methodId + " args=" + java.util.Arrays.toString(args) + " attempt=" + attempt);
     }
 
-    static void onSuccess(String methodId) {
+    public static void onSuccess(String methodId) {
         Long start = STARTS.get().remove(methodId);
         if (start != null) {
             long duration = System.nanoTime() - start;
@@ -29,7 +29,7 @@ final class RetrySupport {
         clear(methodId);
     }
 
-    static boolean onFailure(String methodId, Throwable error, int maxRetries) {
+    public static boolean onFailure(String methodId, Throwable error, int maxRetries) {
         Long start = STARTS.get().get(methodId);
         if (start != null) {
             long duration = System.nanoTime() - start;
@@ -41,7 +41,7 @@ final class RetrySupport {
         return attempt <= maxRetries;
     }
 
-    static void clear(String methodId) {
+    public static void clear(String methodId) {
         Map<String, Integer> attempts = ATTEMPTS.get();
         attempts.remove(methodId);
         if (attempts.isEmpty()) {
