@@ -20,11 +20,11 @@ public class DemoService {
         if (value % 2 != 0) {
             throw new IllegalArgumentException("Odd value: " + value);
         }
-        System.out.println("Processed " + value);
+        System.out.println("Result of unstable void: " + "OK: " + value);
     }
 
     // Not instrumented to show baseline behavior without retries/logging.
     public String stableOperation(String value) {
-        return "Stable: " + value;
+        return "OK: " + value;
     }
 }

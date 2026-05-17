@@ -8,22 +8,24 @@ public class DemoApplication {
         DemoService service = new DemoService();
 
         String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-        System.out.println("PID: " + pid);
+        System.out.println("\nPID: " + pid);
 
-        int iteration = 0;
-        while (wait || iteration < 5) {
+        int iteration = 1;
+        while (wait || iteration <= 5) {
+            System.out.println("\nIteration: " + iteration);
+
             try {
-                System.out.println("Result: " + service.unstableOperation("call-" + iteration));
+                System.out.println("Result of unstable operation: " + service.unstableOperation("call-" + iteration));
             } catch (Exception e) {
-                System.out.println("Call failed: " + e.getMessage());
+                System.out.println("Call of unstable operation failed: " + e.getMessage());
             }
 
-            System.out.println("Stable result: " + service.stableOperation("call-" + iteration));
+            System.out.println("Result of stable operation: " + service.stableOperation("call-" + iteration));
 
             try {
                 service.unstableVoid(iteration);
             } catch (Exception e) {
-                System.out.println("Void call failed: " + e.getMessage());
+                System.out.println("Call of unstable void failed: " + e.getMessage());
             }
 
             iteration++;
