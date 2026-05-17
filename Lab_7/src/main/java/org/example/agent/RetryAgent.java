@@ -30,7 +30,7 @@ public class RetryAgent {
             if (!inst.isModifiableClass(loadedClass)) {
                 continue;
             }
-            if (!transformer.shouldTransform(loadedClass.getName())) {
+            if (transformer.shouldNotTransform(loadedClass.getName())) {
                 continue;
             }
             try {

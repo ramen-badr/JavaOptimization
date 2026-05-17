@@ -13,8 +13,7 @@ public class DemoApplication {
         int iteration = 0;
         while (wait || iteration < 5) {
             try {
-                String result = service.unstableOperation("call-" + iteration);
-                System.out.println("Result: " + result);
+                System.out.println("Result: " + service.unstableOperation("call-" + iteration));
             } catch (Exception e) {
                 System.out.println("Call failed: " + e.getMessage());
             }

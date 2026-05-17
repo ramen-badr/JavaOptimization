@@ -1,12 +1,6 @@
 package org.example.agent;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.CtNewMethod;
-import javassist.LoaderClassPath;
-import javassist.Modifier;
-import javassist.NotFoundException;
+import javassist.*;
 import org.example.instrumentation.Instrumented;
 
 import java.io.ByteArrayInputStream;
@@ -18,21 +12,17 @@ public class RetryTransformer implements ClassFileTransformer {
     private static final String IMPL_SUFFIX = "$impl";
     private static final int MAX_RETRIES = 3;
 
-    boolean shouldTransform(String className) {
+    boolean shouldNotTransform(String className) {
         if (className == null) {
-            return false;
+            return true;
         }
         String normalized = className.replace('/', '.');
-        return normalized.startsWith(TARGET_PACKAGE + ".");
+        return !normalized.startsWith(TARGET_PACKAGE + ".");
     }
 
     @Override
-    public byte[] transform(ClassLoader loader,
-                            String className,
-                            Class<?> classBeingRedefined,
-                            ProtectionDomain protectionDomain,
-                            byte[] classfileBuffer) {
-        if (!shouldTransform(className)) {
+    public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) {
+        if (shouldNotTransform(className)) {
             return null;
         }
 
@@ -63,7 +53,6 @@ public class RetryTransformer implements ClassFileTransformer {
                 String originalName = method.getName();
                 String implName = originalName + IMPL_SUFFIX;
                 method.setName(implName);
-
                 CtMethod wrapper = CtNewMethod.copy(method, originalName, ctClass, null);
                 wrapper.setBody(buildWrapperBody(method, implName, ctClass.getName() + "." + originalName));
                 ctClass.addMethod(wrapper);
@@ -89,7 +78,7 @@ public class RetryTransformer implements ClassFileTransformer {
         return method.hasAnnotation(Instrumented.class);
     }
 
-    private boolean hasImplMethod(CtClass ctClass, CtMethod method) throws NotFoundException {
+    private boolean hasImplMethod(CtClass ctClass, CtMethod method) {
         try {
             ctClass.getDeclaredMethod(method.getName() + IMPL_SUFFIX, method.getParameterTypes());
             return true;
@@ -100,36 +89,22 @@ public class RetryTransformer implements ClassFileTransformer {
 
     private String buildWrapperBody(CtMethod method, String implName, String displayName) throws NotFoundException {
         CtClass returnType = method.getReturnType();
-        String beforeLog = "System.out.println(\"[Agent] Enter " + displayName
-                + " args=\" + java.util.Arrays.toString($args) + \" attempt=\" + (__attempt + 1));";
-        String successLog = "System.out.println(\"[Agent] Exit " + displayName
-                + " time=\" + __duration + \"ns\");";
-        String failureLog = "System.out.println(\"[Agent] Exception in " + displayName
-                + " time=\" + __duration + \"ns: \" + t);";
+
+        String firstlyLog = "System.out.println(\"[Agent] Enter " + displayName + " args=\" + java.util.Arrays.toString($args) + \" attempt=\" + (__attempt + 1));";
+        String successLog = "System.out.println(\"[Agent] Exit " + displayName + " time=\" + __duration + \"ns\");";
+        String failureLog = "System.out.println(\"[Agent] Exception in " + displayName + " time=\" + __duration + \"ns: \" + t);";
 
         StringBuilder body = new StringBuilder();
-        body.append("{ int __attempt = 0; while (true) { long __start = System.nanoTime(); ")
-                .append(beforeLog)
-                .append(" try { ");
+
+        body.append("{ int __attempt = 0; while (true) { long __start = System.nanoTime(); ").append(firstlyLog).append(" try { ");
 
         if (CtClass.voidType.equals(returnType)) {
-            body.append(implName).append("($$); ")
-                    .append("long __duration = System.nanoTime() - __start; ")
-                    .append(successLog)
-                    .append(" return; }");
+            body.append(implName).append("($$); ").append("long __duration = System.nanoTime() - __start; ").append(successLog).append(" return; }");
         } else {
-            String returnTypeName = returnType.getName();
-            body.append(returnTypeName).append(" __result = ")
-                    .append(implName).append("($$); ")
-                    .append("long __duration = System.nanoTime() - __start; ")
-                    .append(successLog)
-                    .append(" return __result; }");
+            body.append(returnType.getName()).append(" __result = ").append(implName).append("($$); ").append("long __duration = System.nanoTime() - __start; ").append(successLog).append(" return __result; }");
         }
 
-        body.append(" catch (Throwable t) { long __duration = System.nanoTime() - __start; ")
-                .append(failureLog)
-                .append(" if (__attempt >= ").append(MAX_RETRIES).append(") { throw t; } __attempt++; } }");
-        body.append(" }");
+        body.append(" catch (Throwable t) { long __duration = System.nanoTime() - __start; ").append(failureLog).append(" if (__attempt >= ").append(MAX_RETRIES).append(") { throw t; } __attempt++; } }").append(" }");
 
         return body.toString();
     }
