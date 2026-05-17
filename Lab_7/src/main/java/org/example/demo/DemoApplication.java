@@ -18,6 +18,8 @@ public class DemoApplication {
                 System.out.println("Call failed: " + e.getMessage());
             }
 
+            System.out.println("Stable result: " + service.stableOperation("call-" + iteration));
+
             try {
                 service.unstableVoid(iteration);
             } catch (Exception e) {
