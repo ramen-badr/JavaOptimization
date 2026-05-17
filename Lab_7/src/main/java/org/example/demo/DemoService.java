@@ -23,6 +23,7 @@ public class DemoService {
         System.out.println("Processed " + value);
     }
 
+    // Not instrumented to show baseline behavior without retries/logging.
     public String stableOperation(String value) {
         return "Stable: " + value;
     }
