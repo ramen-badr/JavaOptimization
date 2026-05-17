@@ -1,8 +1,10 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
 plugins {
     id 'java'
     id 'pmd'
     id 'jacoco'
-    id 'com.github.spotbugs' version '6.0.15'
+    id 'com.github.spotbugs' version '6.2.3'
 }
 
 group = 'org.json'
@@ -50,7 +52,7 @@ spotbugs {
     ignoreFailures = true
 }
 
-tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+tasks.withType(SpotBugsTask).configureEach {
     reports {
         html.required = true
         xml.required = false
