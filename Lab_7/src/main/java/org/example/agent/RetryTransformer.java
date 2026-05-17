@@ -18,8 +18,7 @@ public class RetryTransformer implements ClassFileTransformer {
         if (className == null) {
             return true;
         }
-        String normalized = className.replace('/', '.');
-        return !normalized.startsWith(TARGET_PACKAGE + ".");
+        return !className.replace('/', '.').startsWith(TARGET_PACKAGE + ".");
     }
 
     @Override
@@ -90,34 +89,25 @@ public class RetryTransformer implements ClassFileTransformer {
     }
 
     private void instrumentMethod(CtClass ctClass, CtMethod method) throws CannotCompileException, NotFoundException {
-        method.addLocalVariable(RETRY_ATTEMPT_VAR, CtClass.intType);
-
         String displayName = ctClass.getName() + "." + method.getName();
-        String before = "{ " + RetrySupport.class.getName() + ".onEnter(\"" + displayName + "\", $args); }";
-        method.insertBefore(before);
 
-        String after = "{ " + RetrySupport.class.getName() + ".onSuccess(\"" + displayName + "\"); }";
-        method.insertAfter(after, false);
-
-        String catchBody = buildCatchBody(method, displayName);
-        method.addCatch(catchBody, ctClass.getClassPool().get("java.lang.Throwable"));
+        method.addLocalVariable(RETRY_ATTEMPT_VAR, CtClass.intType);
+        method.insertBefore("{ " + RetrySupport.class.getName() + ".onEnter(\"" + displayName + "\", $args); }");
+        method.insertAfter("{ " + RetrySupport.class.getName() + ".onSuccess(\"" + displayName + "\"); }", false);
+        method.addCatch(buildCatchBody(method, displayName), ctClass.getClassPool().get("java.lang.Throwable"));
     }
 
     private String buildCatchBody(CtMethod method, String displayName) throws NotFoundException {
         CtClass returnType = method.getReturnType();
         String retrySupport = RetrySupport.class.getName();
         StringBuilder body = new StringBuilder();
-        body.append("{ if (").append(retrySupport).append(".onFailure(\"").append(displayName)
-            .append("\", $e, ").append(MAX_RETRIES).append(")) { ");
+        body.append("{ if (").append(retrySupport).append(".onFailure(\"").append(displayName).append("\", $e, ").append(MAX_RETRIES).append(")) { ");
         if (CtClass.voidType.equals(returnType)) {
             body.append(method.getName()).append("($$); return; ");
         } else {
-            body.append("return (").append(returnType.getName()).append(") ")
-                .append(method.getName()).append("($$); ");
+            body.append("return (").append(returnType.getName()).append(") ").append(method.getName()).append("($$); ");
         }
-        body.append("} ");
-        body.append(retrySupport).append(".clear(\"").append(displayName).append("\"); ");
-        body.append("throw $e; }");
+        body.append("} ").append(retrySupport).append(".clear(\"").append(displayName).append("\"); ").append("throw $e; }");
         return body.toString();
     }
 }

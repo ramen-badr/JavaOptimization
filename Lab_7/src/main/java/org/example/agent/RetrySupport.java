@@ -4,10 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class RetrySupport {
-    private static final ThreadLocal<Map<String, Integer>> ATTEMPTS =
-        ThreadLocal.withInitial(HashMap::new);
-    private static final ThreadLocal<Map<String, Long>> STARTS =
-        ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<String, Integer>> ATTEMPTS = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<String, Long>> STARTS = ThreadLocal.withInitial(HashMap::new);
 
     private RetrySupport() {
     }
@@ -23,8 +21,7 @@ public final class RetrySupport {
     public static void onSuccess(String methodId) {
         Long start = STARTS.get().remove(methodId);
         if (start != null) {
-            long duration = System.nanoTime() - start;
-            System.out.println("[Agent] Exit " + methodId + " time=" + duration + "ns");
+            System.out.println("[Agent] Exit " + methodId + " time=" + (System.nanoTime() - start) + "ns");
         }
         clear(methodId);
     }
@@ -32,13 +29,11 @@ public final class RetrySupport {
     public static boolean onFailure(String methodId, Throwable error, int maxRetries) {
         Long start = STARTS.get().get(methodId);
         if (start != null) {
-            long duration = System.nanoTime() - start;
-            System.out.println("[Agent] Exception in " + methodId + " time=" + duration + "ns: " + error);
+            System.out.println("[Agent] Exception in " + methodId + " time=" + (System.nanoTime() - start) + "ns: " + error);
         } else {
             System.out.println("[Agent] Exception in " + methodId + ": " + error);
         }
-        int attempt = ATTEMPTS.get().getOrDefault(methodId, 1);
-        return attempt <= maxRetries;
+        return ATTEMPTS.get().getOrDefault(methodId, 1) <= maxRetries;
     }
 
     public static void clear(String methodId) {
